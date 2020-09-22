@@ -40,6 +40,8 @@ sep_old <-
          title = course_title,
          name = course_name,
          department = course_department) %>% 
+  group_by(id, title, name, department) %>% 
+  summarise(u_grad = sum(u_grad), .groups="drop") %>% 
   filter(u_grad > 10)
 
 # But this is not correct! Look for Gov 50: Data. What do you see? What can you
@@ -51,7 +53,24 @@ sep_old <-
 
 **Prompt:** Read in and clean the new data, creating an object called `sep_new`. 
 
+```{r sc 1}
 
+sep_new <- 
+  read_excel("new_data/class_enrollment_summary_by_term_9-22-2020.xlsx", 
+             skip = 3) %>% 
+  clean_names() %>% 
+  filter(! is.na(course_title)) %>% 
+  select(-grad, -non_degree, -x_reg, -vus, -employee, 
+         -withdraw, -total, -instructor_full_name, -course_section_code) %>%
+  rename(id = course_id,
+         title = course_title,
+         name = course_name,
+         department = course_department) %>% 
+  group_by(id, title, name, department) %>% 
+  summarise(u_grad = sum(u_grad),.groups="drop") %>% 
+  filter(u_grad > 10)
+
+```
 
 ### Scene 2
 
@@ -60,17 +79,32 @@ sep_old <-
 
 Before we start on the model, Wisdom suggests we should:
 
-
-
+-acknowledge that the data can't tell us about outside factors that influence why students are drop courses
+-understand that one person's history, reasoning, or experience with taking a leave of absence or not enrolling in classes does not necessarily affect another person's history, reasoning, or experience
+-care about the people who we do not interview or survey to find out the case in drop in undergraduate enrollment
 
 After we have a model, Temperance suggests we should:
 
-
+-accept that there is uncertainty in our models and not take them to be completely accurate
+-acknowledge that our model is subject to change since observations of the real world are constantly shifting
+-be discreet and honest when randomization is impossible
+-try and ensure validity through an accurate representation of our information in the form of a graphic
 
 ### Scene 3
 
 **Prompt:** Which classes had the biggest increases and decreases in undergraduate enrollments between September 1 and today? Make a graphic that shows the 5 biggest increases and decreases. Make it look nice.
 
+```{r sc3}
+sep_change <- sep_old %>%
+  inner_join(sep_new, by = c("id", "title", "name", "department")) %>% 
+  mutate(enrollment_change = u_grad.y - u_grad.x) %>% 
+  arrange(enrollment_change) %>% 
+  head(5)
+
+
+sep_change
+
+```
 
 
 
